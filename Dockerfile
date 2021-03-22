@@ -35,6 +35,7 @@ RUN set -ex && \
                zstd \
 	       tzdata \
 	       ssmtp \
+	       mailutils \
                && \
     \
     cd /usr/src && \
