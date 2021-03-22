@@ -34,6 +34,7 @@ RUN set -ex && \
                xz \
                zstd \
 	       tzdata \
+	       ssmtp \
                && \
     \
     cd /usr/src && \
