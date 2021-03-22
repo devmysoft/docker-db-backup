@@ -33,6 +33,7 @@ RUN set -ex && \
                sqlite \
                xz \
                zstd \
+	       tzdata \
                && \
     \
     cd /usr/src && \
