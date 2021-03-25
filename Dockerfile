@@ -7,7 +7,6 @@ ENV MSSQL_VERSION=17.5.2.1-1 \
     ENABLE_ZABBIX=TRUE \
     ZABBIX_HOSTNAME=db-backup
 
-COPY upload-backup.sh /assets/custom-scripts/post-script.sh
 
     ### Dependencies
 RUN set -ex && \
@@ -68,3 +67,6 @@ RUN set -ex && \
 
 ### S6 Setup
     ADD install  /
+    
+    COPY upload-backup.sh /assets/custom-scripts/post-script.sh
+
