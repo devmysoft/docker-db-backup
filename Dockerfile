@@ -67,6 +67,4 @@ RUN set -ex && \
 
 ### S6 Setup
     ADD install  /
-    
-    COPY upload-backup.sh /assets/custom-scripts/post-script.sh
-
+   
