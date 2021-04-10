@@ -35,6 +35,7 @@ RUN set -ex && \
                xz \
                zstd \
 	       tzdata \
+	       openssh \
                && \
     \
     cd /usr/src && \
