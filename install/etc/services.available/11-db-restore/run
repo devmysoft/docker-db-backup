@@ -1,0 +1,120 @@
+#!/usr/bin/with-contenv bash
+
+source /assets/functions/00-container
+
+PROCESS_NAME="db-restore"
+
+date >/dev/null
+
+### Sanity Test
+sanity_var DB_TYPE "Database Type"
+sanity_var DB_HOST "Database Host"
+
+### Set the Database Type
+dbtype=${DB_TYPE}
+
+case "$dbtype" in
+    "couch" | "couchdb" | "COUCH" | "COUCHDB"  )
+        dbtype=couch
+        dbport=${DB_PORT:-5984}
+        file_env 'DB_USER'
+        file_env 'DB_PASS'
+    ;;
+    "influx" | "influxdb" | "INFLUX" | "INFLUXDB"  )
+        dbtype=influx
+        dbport=${DB_PORT:-8088}
+        file_env 'DB_USER'
+        file_env 'DB_PASS'
+    ;;
+    "mongo" | "mongodb" | "MONGO" | "MONGODB" )
+        dbtype=mongo
+        dbport=${DB_PORT:-27017}
+        [[ ( -n "${DB_USER}" ) || ( -n "${DB_USER_FILE}" ) ]] && file_env 'DB_USER'
+        [[ ( -n "${DB_PASS}" ) || ( -n "${DB_PASS_FILE}" ) ]] && file_env 'DB_PASS'
+    ;;
+    "mysql" | "MYSQL" | "mariadb" | "MARIADB")
+        dbtype=mysql
+        dbport=${DB_PORT:-3306}
+        [[ ( -n "${DB_PASS}" ) || ( -n "${DB_PASS_FILE}" ) ]] && file_env 'DB_PASS'
+    ;;
+    "mssql" | "MSSQL" | "microsoftsql" | "MICROSOFTSQL")
+        apkArch="$(apk --print-arch)"; \
+	    case "$apkArch" in
+		    x86_64) mssql=true ;;
+		    *) print_error "MSSQL cannot operate on $apkArch processor!" ; exit 1 ;;
+        esac
+        dbtype=mssql
+        dbport=${DB_PORT:-1433}
+    ;;
+    "postgres" | "postgresql" | "pgsql" | "POSTGRES" | "POSTGRESQL" | "PGSQL" )
+        dbtype=pgsql
+        dbport=${DB_PORT:-5432}
+        [[ ( -n "${DB_PASS}" ) || ( -n "${DB_PASS_FILE}" ) ]] && file_env 'DB_PASS'
+    ;;
+    "redis" | "REDIS"   )
+        dbtype=redis
+        dbport=${DB_PORT:-6379}
+        [[ ( -n "${DB_PASS}" || ( -n "${DB_PASS_FILE}" ) ) ]] && file_env 'DB_PASS'
+    ;;
+    "sqlite" | "sqlite3" | "SQLITE" | "SQLITE3" )
+        dbtype=sqlite3
+    ;;
+esac
+
+### Set Defaults
+BACKUP_LOCATION=${BACKUP_LOCATION:-"FILESYSTEM"}
+COMPRESSION=${COMPRESSION:-GZ}
+COMPRESSION_LEVEL=${COMPRESSION_LEVEL:-"3"}
+DB_DUMP_BEGIN=${DB_DUMP_BEGIN:-+0}
+DB_DUMP_FREQ=${DB_DUMP_FREQ:-1440}
+DB_DUMP_TARGET=${DB_DUMP_TARGET:-/backup}
+dbhost=${DB_HOST}
+dbname=${DB_NAME}
+dbpass=${DB_PASS}
+dbuser=${DB_USER}
+MD5=${MD5:-TRUE}
+PARALLEL_COMPRESSION=${PARALLEL_COMPRESSION:-TRUE}
+SIZE_VALUE=${SIZE_VALUE:-"bytes"}
+SPLIT_DB=${SPLIT_DB:-FALSE}
+tmpdir=/tmp/backups
+
+
+### Set Compression Options
+if var_true "$PARALLEL_COMPRESSION" ; then
+    bzip="pbzip2 -${COMPRESSION_LEVEL}"
+    gzip="pigz -${COMPRESSION_LEVEL}"
+    xzip="pixz -${COMPRESSION_LEVEL}"
+    zstd="zstd --rm -${COMPRESSION_LEVEL}"
+else
+    bzip="bzip2 -${COMPRESSION_LEVEL}"
+    gzip="gzip -${COMPRESSION_LEVEL}"
+    xzip="xz -${COMPRESSION_LEVEL} "
+    zstd="zstd --rm -${COMPRESSION_LEVEL}"
+fi
+
+### Set the Database Authentication Details
+case "$dbtype" in
+    "mongo" )
+        [[ ( -n "${DB_USER}" ) ]] && MONGO_USER_STR=" --username ${dbuser}"
+        [[ ( -n "${DB_PASS}" ) ]] && MONGO_PASS_STR=" --password ${dbpass}"
+        [[ ( -n "${DB_NAME}" ) ]] && MONGO_DB_STR=" --db ${dbname}"
+    ;;
+    "mysql" )
+        [[ ( -n "${DB_PASS}" ) ]] && export MYSQL_PWD=${dbpass}
+    ;;
+    "postgres" )
+        [[ ( -n "${DB_PASS}" ) ]] && POSTGRES_PASS_STR="PGPASSWORD=${dbpass}"
+    ;;
+    "redis" )
+        [[ ( -n "${DB_PASS}" ) ]] && REDIS_PASS_STR=" -a ${dbpass}"
+    ;;
+esac
+
+
+### RESTORE BACKUP
+if [ "$1" == "RESTORE-NOW" ]; then
+        curl "${UPLOAD_SEO}$2?token=${UPLOAD_TOKEN}" --output /backup/db-restore-backup.sql.gz
+        zcat /backup/db-restore-backup.sql.gz | mysql -h $dbhost -P $dbport -u$dbuser ${DB_NAME}
+        rm /backup/db-restore-backup.sql.gz
+        print_notice "Restore backup successful"
+  fi
