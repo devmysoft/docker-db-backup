@@ -1,4 +1,4 @@
 #!/usr/bin/with-contenv bash
 
 echo '** Performing Manual Backup'
-/etc/services.available/11-db-retore/run RESTORE-NOW $1
+/etc/services.available/11-db-restore/run RESTORE-NOW $1
