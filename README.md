@@ -4,6 +4,13 @@
 [![Docker Stars](https://img.shields.io/docker/stars/tiredofit/db-backup.svg)](https://hub.docker.com/r/tiredofit/db-backup)
 [![Docker Layers](https://images.microbadger.com/badges/image/tiredofit/db-backup.svg)](https://microbadger.com/images/tiredofit/db-backup)
 
+## Cmd
+
+| Cmd                        | Example                                                                   | Description                                                               |
+| -------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `backup-now`               | `backup-now`                                                              | Will backup the database from ENV variables and push it to the upload URL |
+| `restore-now $upload-path` | `restore-now /db/2021/07/01/mysql_devmysoft_mysql_20210701-000019.sql.gz` | Will restore the db from upload URL                                       |
+
 ## Introduction
 
 This will build a container for backing up multiple type of DB Servers
