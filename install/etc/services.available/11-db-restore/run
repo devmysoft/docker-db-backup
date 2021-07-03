@@ -111,10 +111,11 @@ case "$dbtype" in
 esac
 
 
-### RESTORE BACKUP
-if [ "$1" == "RESTORE-NOW" ]; then
-        curl "${UPLOAD_SEO}$2?token=${UPLOAD_TOKEN}" --output /backup/db-restore-backup.sql.gz
-        zcat /backup/db-restore-backup.sql.gz | mysql -h $dbhost -P $dbport -u$dbuser ${DB_NAME}
-        rm /backup/db-restore-backup.sql.gz
-        print_notice "Restore backup successful"
-  fi
+### RESTORE BACKUP                                                         
+if [ "$1" == "RESTORE-NOW" ]; then                                 
+    echo "DOWNLOADING ${UPLOAD_SEO}$2?token=XXX"            
+    curl -fsS "${UPLOAD_SEO}$2?token=${UPLOAD_TOKEN}" --output /backup/db-restore-backup.sql.gz
+    zcat /backup/db-restore-backup.sql.gz | mysql -h $dbhost -P $dbport -u$dbuser ${DB_NAME}
+    rm /backup/db-restore-backup.sql.gz    
+    print_notice "Restore backup successful"
+  fi  
